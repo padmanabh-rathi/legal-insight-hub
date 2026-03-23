@@ -61,6 +61,13 @@ Based on the analysis of the Supply Agreement between GlobalTech Industries and 
 - [ ] **Indemnification** — Both parties to indemnify against third-party IP infringement claims *(Ongoing — Section 9.1)*
 - [ ] **Termination Notice** — Provide 90 days' written notice for termination for convenience *(One-time — Section 11.3)*`;
 
+const PROMPT_ENRICHMENTS = [
+  { label: "Summarize in plain English", prompt: "Please summarize the following in plain, non-technical English suitable for a business executive: " },
+  { label: "Identify risks & red flags", prompt: "Identify all potential risks, red flags, and unfavorable terms in the following document: " },
+  { label: "Extract key dates & deadlines", prompt: "Extract all key dates, deadlines, and time-sensitive obligations from: " },
+  { label: "Compare with standard terms", prompt: "Compare the following clauses against market-standard terms and highlight deviations: " },
+];
+
 export default function Index() {
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -70,6 +77,8 @@ export default function Index() {
   const [draftDrawerOpen, setDraftDrawerOpen] = useState(false);
   const [latestDocName, setLatestDocName] = useState<string | undefined>();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   const hasMessages = messages.length > 0;
 
