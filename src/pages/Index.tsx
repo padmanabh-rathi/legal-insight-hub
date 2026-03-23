@@ -326,22 +326,43 @@ export default function Index() {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1 flex-wrap">
-                  <Button variant="ghost" size="sm" className="text-muted-foreground gap-1.5 text-xs">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground gap-1.5 text-xs"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
                     <Paperclip className="h-3.5 w-3.5" />
                     Files and sources
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-muted-foreground gap-1.5 text-xs">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Prompts
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-muted-foreground gap-1.5 text-xs">
-                    <Settings2 className="h-3.5 w-3.5" />
-                    Customize
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-muted-foreground gap-1.5 text-xs">
-                    <ToggleLeft className="h-3.5 w-3.5" />
-                    Improve
-                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.docx,.doc"
+                    multiple
+                    onChange={handleFileUpload}
+                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-muted-foreground gap-1.5 text-xs">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Prompts
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72 p-2" align="start">
+                      <p className="text-xs font-medium text-muted-foreground px-2 py-1.5">Prompt Enrichment</p>
+                      {PROMPT_ENRICHMENTS.map((pe) => (
+                        <button
+                          key={pe.label}
+                          className="w-full text-left text-sm px-2 py-2 rounded-md hover:bg-accent transition-colors"
+                          onClick={() => setQuery((prev) => pe.prompt + prev)}
+                        >
+                          {pe.label}
+                        </button>
+                      ))}
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <Button onClick={handleAsk} disabled={!query.trim() || isLoading} className="rounded-lg gap-2">
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
