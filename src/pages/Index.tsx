@@ -199,6 +199,8 @@ export default function Index() {
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files?.length) return;
+    setUploading(true);
+    const uploadedFiles: AttachedFile[] = [];
     try {
       for (const file of Array.from(files)) {
         const filePath = `uploads/${Date.now()}_${file.name}`;
@@ -208,19 +210,36 @@ export default function Index() {
         if (uploadError) throw uploadError;
 
         const fileType = file.name.split(".").pop()?.toLowerCase() || "unknown";
-        const { error: dbError } = await supabase.from("documents").insert({
+        const { data: docData, error: dbError } = await supabase.from("documents").insert({
           name: file.name,
           file_path: filePath,
           status: "pending",
           file_type: fileType,
-        });
+        }).select("id, name").single();
         if (dbError) throw dbError;
+        uploadedFiles.push({ name: docData.name, id: docData.id });
       }
-      toast({ title: "Document uploaded", description: `${files.length} file(s) uploaded to Vault.` });
+
+      // Add attached files to state
+      setAttachedFiles((prev) => [...prev, ...uploadedFiles]);
+      setLatestDocName(uploadedFiles[0]?.name);
+
+      // Show upload confirmation as a system message in chat
+      const fileNames = uploadedFiles.map((f) => f.name).join(", ");
+      const uploadMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: `📎 **Document uploaded:** ${fileNames}\n\nThe document has been saved to your Vault and is ready for analysis. You can now ask questions about it — for example:\n\n- *"Summarize this document"*\n- *"What are the key risks?"*\n- *"Extract all obligations"*`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, uploadMsg]);
+
+      toast({ title: "Document uploaded", description: `${files.length} file(s) ready for analysis.` });
     } catch (err) {
       console.error("Upload failed:", err);
       toast({ title: "Upload failed", description: "Could not upload document.", variant: "destructive" });
     } finally {
+      setUploading(false);
       e.target.value = "";
     }
   }
