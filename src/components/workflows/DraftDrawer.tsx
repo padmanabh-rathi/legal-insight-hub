@@ -2,36 +2,8 @@ import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReactMarkdown from "react-markdown";
-
-const MOCK_DRAFT = `# Client Alert: Supply Agreement Review
-
-## Summary
-
-GlobalTech Industries and Meridian Corp have entered into a 36-month commercial supply agreement for semiconductor components. This alert highlights the key business risks and required actions for executive leadership.
-
-## Key Takeaways
-
-- **Minimum Purchase Commitment**: Meridian Corp is required to purchase no less than **10,000 units per quarter**, with a **15% shortfall fee** for non-compliance. This creates a significant ongoing financial obligation.
-
-- **Automatic Renewal Risk**: The agreement auto-renews for 12-month periods **without any price renegotiation mechanism**, potentially locking the company into unfavorable pricing in a volatile market.
-
-- **Uncapped IP Indemnification**: Section 9.1 contains mutual indemnification for IP infringement **with no liability cap**, exposing the company to potentially unlimited financial risk.
-
-- **Broad Force Majeure**: The definition includes "supply chain disruptions" which is vaguely worded and could be invoked for routine supply issues.
-
-- **Termination Fee**: Early termination requires 90 days' notice plus a fee of up to **25% of remaining contract value**.
-
-## Recommended Next Steps
-
-1. **Negotiate a liability cap** on the indemnification clause — industry standard is 2-3x annual contract value
-2. **Add a price adjustment mechanism** (e.g., CPI-linked) for renewal periods
-3. **Narrow the force majeure definition** to require unforeseeable and unmitigable events
-4. **Review the non-compete provision** (Section 13.2) for enforceability in relevant jurisdictions
-5. **Engage insurance counsel** to ensure adequate coverage for the uncapped indemnification exposure
-
----
-
-*This alert is for informational purposes only and does not constitute legal advice. Please consult with your legal team before taking action.*`;
+import { runWorkflow } from "@/services/legalAI";
+import { WORKFLOW_PROMPTS } from "@/config/workflowPrompts";
 
 interface DraftDrawerProps {
   open: boolean;
@@ -42,18 +14,29 @@ interface DraftDrawerProps {
 export function DraftDrawer({ open, onClose, documentName }: DraftDrawerProps) {
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
       setLoading(true);
       setContent("");
-      const timer = setTimeout(() => {
-        setContent(MOCK_DRAFT);
-        setLoading(false);
-      }, 2500);
-      return () => clearTimeout(timer);
+      setError(null);
+
+      const workflow = WORKFLOW_PROMPTS["draft-client-alert"];
+      const docText = `Document: ${documentName || "Uploaded legal document"}`;
+
+      runWorkflow(workflow.systemPrompt, workflow.userTemplate(docText))
+        .then((result) => {
+          setContent(result);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error("Draft generation failed:", err);
+          setError(err.message || "Failed to generate draft");
+          setLoading(false);
+        });
     }
-  }, [open]);
+  }, [open, documentName]);
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
@@ -79,11 +62,9 @@ export function DraftDrawer({ open, onClose, documentName }: DraftDrawerProps) {
               <Skeleton className="h-6 w-1/2 mt-4" />
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-4/5" />
-              <Skeleton className="h-6 w-2/3 mt-4" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
             </div>
+          ) : error ? (
+            <div className="text-sm text-destructive">{error}</div>
           ) : (
             <div className="prose prose-sm max-w-none dark:prose-invert">
               <ReactMarkdown>{content}</ReactMarkdown>
