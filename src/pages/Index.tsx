@@ -81,6 +81,7 @@ export default function Index() {
   const [streamingContent, setStreamingContent] = useState("");
   const [activeWorkflow, setActiveWorkflow] = useState<ActiveWorkflow>(null);
   const [draftDrawerOpen, setDraftDrawerOpen] = useState(false);
+  const [latestDocName, setLatestDocName] = useState<string | undefined>();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pendingWorkflow, setPendingWorkflow] = useState<ActiveWorkflow>(null);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
