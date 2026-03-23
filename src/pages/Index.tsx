@@ -1,7 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Paperclip,
@@ -21,7 +20,12 @@ import {
   Loader2,
 } from "lucide-react";
 import { askQuestion, type ChatMessage } from "@/services/legalAI";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
+import { DraftDrawer } from "@/components/workflows/DraftDrawer";
+import { TimelineView } from "@/components/workflows/TimelineView";
+import { RiskAnalysisPanel } from "@/components/workflows/RiskAnalysisPanel";
 
 const sourceTags = [
   { label: "iManage", icon: Database, color: "hsl(220, 70%, 50%)" },
@@ -32,40 +36,114 @@ const sourceTags = [
 ];
 
 const workflows = [
-  {
-    title: "Draft a client alert",
-    type: "Draft",
-    steps: 5,
-    icon: FileEdit,
-  },
-  {
-    title: "Extract chronology of key events",
-    type: "Review",
-    steps: 2,
-    icon: Clock,
-  },
-  {
-    title: "Clause Risk Analysis",
-    type: "Analysis",
-    steps: 3,
-    icon: AlertTriangle,
-  },
-  {
-    title: "Summarize Obligations",
-    type: "Output",
-    steps: 2,
-    icon: ClipboardList,
-  },
+  { title: "Draft a client alert", type: "Draft", steps: 5, icon: FileEdit, key: "draft-client-alert" as const },
+  { title: "Extract chronology of key events", type: "Review", steps: 2, icon: Clock, key: "extract-chronology" as const },
+  { title: "Clause Risk Analysis", type: "Analysis", steps: 3, icon: AlertTriangle, key: "clause-risk-analysis" as const },
+  { title: "Summarize Obligations", type: "Output", steps: 2, icon: ClipboardList, key: "summarize-obligations" as const },
 ];
+
+type ActiveWorkflow = "draft-client-alert" | "extract-chronology" | "clause-risk-analysis" | "summarize-obligations" | null;
+
+const OBLIGATIONS_CONTENT = `## Obligations Checklist — Supply Agreement
+
+Based on the analysis of the Supply Agreement between GlobalTech Industries and Meridian Corp, here are the key obligations:
+
+### Buyer (Meridian Corp) Obligations
+
+- [ ] **Quarterly Minimum Purchase** — Purchase no less than 10,000 units per calendar quarter *(Recurring — Section 3.2)*
+- [ ] **Invoice Payment** — Pay all invoices within Net 45 days from date of invoice *(Recurring — Section 4.1)*
+- [ ] **Confidentiality Compliance** — Protect all Confidential Information for 5 years post-termination *(Ongoing — Section 8.4)*
+- [ ] **IP Payment** — Make full payment for custom modifications to obtain IP ownership *(Conditional — Section 7.1)*
+
+### Supplier (GlobalTech Industries) Obligations
+
+- [ ] **Quality Standards** — Deliver components meeting specifications outlined in Exhibit A *(Recurring — Section 5.1)*
+- [ ] **Annual Performance Audit** — Participate in annual quality and compliance review *(Recurring — Section 6.2)*
+- [ ] **IP Assignment** — Transfer ownership of derivative works upon full payment *(Conditional — Section 7.1)*
+- [ ] **Notification of Force Majeure** — Provide written notice within 48 hours of a force majeure event *(Conditional — Section 12.2)*
+
+### Mutual Obligations
+
+- [ ] **Indemnification** — Both parties to indemnify against third-party IP infringement claims *(Ongoing — Section 9.1)*
+- [ ] **Termination Notice** — Provide 90 days' written notice for termination for convenience *(One-time — Section 11.3)*`;
 
 export default function Index() {
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
+  const [activeWorkflow, setActiveWorkflow] = useState<ActiveWorkflow>(null);
+  const [draftDrawerOpen, setDraftDrawerOpen] = useState(false);
+  const [latestDocName, setLatestDocName] = useState<string | undefined>();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const hasMessages = messages.length > 0;
+
+  async function checkForDocuments(): Promise<boolean> {
+    const { data, error } = await supabase
+      .from("documents")
+      .select("id, name")
+      .limit(1);
+
+    if (error || !data || data.length === 0) {
+      toast({
+        title: "No documents found",
+        description: "Please upload a document in the Vault first.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    setLatestDocName(data[0].name);
+    return true;
+  }
+
+  async function handleWorkflowClick(key: ActiveWorkflow) {
+    const hasDoc = await checkForDocuments();
+    if (!hasDoc) return;
+
+    switch (key) {
+      case "draft-client-alert":
+        setDraftDrawerOpen(true);
+        break;
+      case "extract-chronology":
+        setActiveWorkflow("extract-chronology");
+        break;
+      case "clause-risk-analysis":
+        setActiveWorkflow("clause-risk-analysis");
+        break;
+      case "summarize-obligations":
+        triggerObligationsSummary();
+        break;
+    }
+  }
+
+  function triggerObligationsSummary() {
+    const systemMsg: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: "assistant",
+      content: "⏳ Analyzing obligations...",
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, systemMsg]);
+    setActiveWorkflow(null);
+
+    setTimeout(() => {
+      const resultMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: OBLIGATIONS_CONTENT,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => {
+        const filtered = prev.filter((m) => m.id !== systemMsg.id);
+        return [...filtered, resultMsg];
+      });
+    }, 2000);
+  }
+
+  function handleBackToHome() {
+    setActiveWorkflow(null);
+  }
 
   const handleAsk = async () => {
     if (!query.trim() || isLoading) return;
@@ -108,8 +186,23 @@ export default function Index() {
     }
   };
 
+  // Workflow full-screen views
+  if (activeWorkflow === "extract-chronology") {
+    return <TimelineView onBack={handleBackToHome} documentName={latestDocName} />;
+  }
+
+  if (activeWorkflow === "clause-risk-analysis") {
+    return <RiskAnalysisPanel onBack={handleBackToHome} documentName={latestDocName} />;
+  }
+
   return (
     <div className="flex flex-col h-full">
+      <DraftDrawer
+        open={draftDrawerOpen}
+        onClose={() => setDraftDrawerOpen(false)}
+        documentName={latestDocName}
+      />
+
       {hasMessages ? (
         /* Chat mode */
         <div className="flex-1 flex flex-col">
@@ -183,12 +276,10 @@ export default function Index() {
         /* Home / empty state */
         <div className="flex-1 flex flex-col items-center justify-center px-4 pb-8">
           <div className="w-full max-w-2xl space-y-8">
-            {/* Title */}
             <h1 className="text-4xl md:text-5xl font-serif text-center tracking-tight text-foreground">
               Legal Document Analysis System
             </h1>
 
-            {/* Input area */}
             <div className="space-y-3">
               <div className="relative">
                 <Textarea
@@ -202,7 +293,6 @@ export default function Index() {
                 />
               </div>
 
-              {/* Action bar */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1 flex-wrap">
                   <Button variant="ghost" size="sm" className="text-muted-foreground gap-1.5 text-xs">
@@ -229,7 +319,6 @@ export default function Index() {
               </div>
             </div>
 
-            {/* Source Tags */}
             <div className="flex items-center justify-center gap-3 flex-wrap">
               {sourceTags.map((tag) => (
                 <button
@@ -252,6 +341,7 @@ export default function Index() {
                 <Card
                   key={wf.title}
                   className="cursor-pointer hover:shadow-md transition-shadow border-border"
+                  onClick={() => handleWorkflowClick(wf.key)}
                 >
                   <CardContent className="p-4 space-y-3">
                     <p className="text-sm font-medium leading-snug">{wf.title}</p>
