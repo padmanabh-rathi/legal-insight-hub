@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Vault from "./pages/Vault";
 import Workflows from "./pages/Workflows";
 import Analysis from "./pages/Analysis";
+import History from "./pages/History";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/vault" element={<Vault />} />
             <Route path="/workflows" element={<Workflows />} />
             <Route path="/analysis/:id" element={<Analysis />} />
+            <Route path="/history" element={<History />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>

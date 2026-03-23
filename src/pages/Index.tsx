@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +22,7 @@ import { DraftDrawer } from "@/components/workflows/DraftDrawer";
 import { TimelineView } from "@/components/workflows/TimelineView";
 import { RiskAnalysisPanel } from "@/components/workflows/RiskAnalysisPanel";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const sourceTags = [
   { label: "Web Search", icon: Globe, color: "hsl(142, 60%, 40%)" },
@@ -86,8 +86,49 @@ export default function Index() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const hasMessages = messages.length > 0;
+  // Handle "New Chat" and "Restore Session" from navigation state
+  useEffect(() => {
+    const navState = location.state as { newChat?: boolean; restoreSession?: { id: string; title: string; messages: unknown[] } } | null;
+    if (!navState) return;
+
+    if (navState.newChat) {
+      saveCurrentChatToHistory();
+      // Clear navigation state
+      window.history.replaceState({}, "");
+    }
+
+    if (navState.restoreSession) {
+      const session = navState.restoreSession;
+      setMessages(session.messages as ChatMessage[]);
+      setAttachedFiles([]);
+      setActiveWorkflow(null);
+      window.history.replaceState({}, "");
+    }
+  }, [location.state]);
+
+  async function saveCurrentChatToHistory() {
+    if (messages.length > 0) {
+      // Derive title from first user message
+      const firstUserMsg = messages.find((m) => m.role === "user");
+      const title = firstUserMsg
+        ? firstUserMsg.content.slice(0, 80) + (firstUserMsg.content.length > 80 ? "..." : "")
+        : "Untitled Chat";
+
+      await supabase.from("chat_sessions").insert({
+        title,
+        messages: JSON.parse(JSON.stringify(messages)),
+      });
+    }
+
+    // Reset state for new chat
+    setMessages([]);
+    setQuery("");
+    setAttachedFiles([]);
+    setActiveWorkflow(null);
+    setStreamingContent("");
+  }
 
   async function checkForDocuments(): Promise<boolean> {
     const { data, error } = await supabase
@@ -267,7 +308,7 @@ export default function Index() {
         documentName={latestDocName}
       />
 
-      {hasMessages ? (
+      {messages.length > 0 ? (
         /* Chat mode */
         <div className="flex-1 flex flex-col">
           <div className="flex-1 overflow-auto px-4 md:px-8 lg:px-16 py-6 space-y-6">

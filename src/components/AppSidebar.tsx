@@ -10,7 +10,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -51,21 +51,26 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const navigate = useNavigate();
   const isVaultActive = location.pathname.startsWith("/vault");
+
+  function handleNewChat() {
+    navigate("/", { state: { newChat: true } });
+  }
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarContent className="pt-4">
-        {/* Create Button */}
+        {/* New Chat Button */}
         <div className="px-3 mb-4">
           {collapsed ? (
-            <Button variant="outline" size="icon" className="w-full">
+            <Button variant="outline" size="icon" className="w-full" onClick={handleNewChat}>
               <Plus className="h-4 w-4" />
             </Button>
           ) : (
-            <Button variant="outline" className="w-full justify-start gap-2 font-normal">
+            <Button variant="outline" className="w-full justify-start gap-2 font-normal" onClick={handleNewChat}>
               <Plus className="h-4 w-4" />
-              Create
+              New Chat
             </Button>
           )}
         </div>
