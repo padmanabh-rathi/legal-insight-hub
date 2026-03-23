@@ -28,10 +28,7 @@ import { TimelineView } from "@/components/workflows/TimelineView";
 import { RiskAnalysisPanel } from "@/components/workflows/RiskAnalysisPanel";
 
 const sourceTags = [
-  { label: "iManage", icon: Database, color: "hsl(220, 70%, 50%)" },
-  { label: "LexisNexis", icon: FileSearch, color: "hsl(0, 70%, 50%)" },
   { label: "Web Search", icon: Globe, color: "hsl(142, 60%, 40%)" },
-  { label: "EDGAR", icon: Building2, color: "hsl(260, 60%, 50%)" },
   { label: "Project Vault", icon: FolderOpen, color: "hsl(0, 0%, 40%)" },
 ];
 
