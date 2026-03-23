@@ -189,6 +189,34 @@ export default function Index() {
     }
   };
 
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files?.length) return;
+    try {
+      for (const file of Array.from(files)) {
+        const filePath = `uploads/${Date.now()}_${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("legal-documents")
+          .upload(filePath, file);
+        if (uploadError) throw uploadError;
+
+        const fileType = file.name.split(".").pop()?.toLowerCase() || "unknown";
+        const { error: dbError } = await supabase.from("documents").insert({
+          name: file.name,
+          file_path: filePath,
+          status: "pending",
+          file_type: fileType,
+        });
+        if (dbError) throw dbError;
+      }
+      toast({ title: "Document uploaded", description: `${files.length} file(s) uploaded to Vault.` });
+    } catch (err) {
+      console.error("Upload failed:", err);
+      toast({ title: "Upload failed", description: "Could not upload document.", variant: "destructive" });
+    } finally {
+      e.target.value = "";
+    }
+  }
   // Workflow full-screen views
   if (activeWorkflow === "extract-chronology") {
     return <TimelineView onBack={handleBackToHome} documentName={latestDocName} />;
