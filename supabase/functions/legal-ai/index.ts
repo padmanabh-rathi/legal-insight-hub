@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const HF_ENDPOINT =
-  "https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3.1-70B";
+  "https://router.huggingface.co/hf-inference/models/meta-llama/Meta-Llama-3.1-70B-Instruct";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
