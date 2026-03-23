@@ -14,7 +14,8 @@ import {
   ClipboardList,
   Loader2,
 } from "lucide-react";
-import { askQuestion, type ChatMessage } from "@/services/legalAI";
+import { askQuestion, runWorkflow, type ChatMessage } from "@/services/legalAI";
+import { WORKFLOW_PROMPTS } from "@/config/workflowPrompts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
