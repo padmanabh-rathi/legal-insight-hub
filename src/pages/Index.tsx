@@ -315,24 +315,45 @@ export default function Index() {
 
           {/* Chat input bar */}
           <div className="border-t border-border p-4 md:px-8 lg:px-16">
-            <div className="max-w-3xl mx-auto relative">
-              <Textarea
-                ref={textareaRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask anything about your legal documents..."
-                className="min-h-[48px] max-h-32 resize-none pr-12 rounded-xl border-input"
-                rows={1}
-              />
-              <Button
-                size="icon"
-                onClick={handleAsk}
-                disabled={!query.trim() || isLoading}
-                className="absolute right-2 bottom-2 h-8 w-8 rounded-lg"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+            <div className="max-w-3xl mx-auto space-y-2">
+              {attachedFiles.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {attachedFiles.map((f) => (
+                    <span key={f.id} className="inline-flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-md">
+                      <Paperclip className="h-3 w-3" />
+                      {f.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="relative flex items-end gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+                </Button>
+                <Textarea
+                  ref={textareaRef}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask anything about your legal documents..."
+                  className="min-h-[48px] max-h-32 resize-none pr-12 rounded-xl border-input"
+                  rows={1}
+                />
+                <Button
+                  size="icon"
+                  onClick={handleAsk}
+                  disabled={!query.trim() || isLoading}
+                  className="absolute right-2 bottom-2 h-8 w-8 rounded-lg"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
