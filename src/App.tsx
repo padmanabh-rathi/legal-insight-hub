@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Vault from "./pages/Vault";
 import Workflows from "./pages/Workflows";
 import Analysis from "./pages/Analysis";
+import History from "./pages/History";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
