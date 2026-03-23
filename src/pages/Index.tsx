@@ -385,9 +385,10 @@ export default function Index() {
                     size="sm"
                     className="text-muted-foreground gap-1.5 text-xs"
                     onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
                   >
-                    <Paperclip className="h-3.5 w-3.5" />
-                    Files and sources
+                    {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
+                    {uploading ? "Uploading..." : "Files and sources"}
                   </Button>
                   <input
                     ref={fileInputRef}
