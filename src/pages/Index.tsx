@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +22,7 @@ import { DraftDrawer } from "@/components/workflows/DraftDrawer";
 import { TimelineView } from "@/components/workflows/TimelineView";
 import { RiskAnalysisPanel } from "@/components/workflows/RiskAnalysisPanel";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const sourceTags = [
   { label: "Web Search", icon: Globe, color: "hsl(142, 60%, 40%)" },
