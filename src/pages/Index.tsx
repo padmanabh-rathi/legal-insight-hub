@@ -68,6 +68,11 @@ const PROMPT_ENRICHMENTS = [
   { label: "Compare with standard terms", prompt: "Compare the following clauses against market-standard terms and highlight deviations: " },
 ];
 
+interface AttachedFile {
+  name: string;
+  id: string;
+}
+
 export default function Index() {
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -76,6 +81,8 @@ export default function Index() {
   const [activeWorkflow, setActiveWorkflow] = useState<ActiveWorkflow>(null);
   const [draftDrawerOpen, setDraftDrawerOpen] = useState(false);
   const [latestDocName, setLatestDocName] = useState<string | undefined>();
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const [uploading, setUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
