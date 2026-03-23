@@ -293,6 +293,12 @@ export default function Index() {
 
   return (
     <div className="flex flex-col h-full">
+      <DocumentPickerDialog
+        open={pickerOpen}
+        onClose={() => { setPickerOpen(false); setPendingWorkflow(null); }}
+        onSelect={handleDocumentSelected}
+        workflowTitle={workflows.find(w => w.key === pendingWorkflow)?.title || ""}
+      />
       <DraftDrawer
         open={draftDrawerOpen}
         onClose={() => setDraftDrawerOpen(false)}
