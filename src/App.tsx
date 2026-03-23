@@ -25,6 +25,7 @@ const App = () => (
             <Route path="/vault" element={<Vault />} />
             <Route path="/workflows" element={<Workflows />} />
             <Route path="/analysis/:id" element={<Analysis />} />
+            <Route path="/history" element={<History />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>

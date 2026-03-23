@@ -55,23 +55,22 @@ export function AppSidebar() {
   const isVaultActive = location.pathname.startsWith("/vault");
 
   function handleNewChat() {
-    // Navigate to home with a flag to start fresh
     navigate("/", { state: { newChat: true } });
   }
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarContent className="pt-4">
-        {/* Create Button */}
+        {/* New Chat Button */}
         <div className="px-3 mb-4">
           {collapsed ? (
-            <Button variant="outline" size="icon" className="w-full">
+            <Button variant="outline" size="icon" className="w-full" onClick={handleNewChat}>
               <Plus className="h-4 w-4" />
             </Button>
           ) : (
-            <Button variant="outline" className="w-full justify-start gap-2 font-normal">
+            <Button variant="outline" className="w-full justify-start gap-2 font-normal" onClick={handleNewChat}>
               <Plus className="h-4 w-4" />
-              Create
+              New Chat
             </Button>
           )}
         </div>
