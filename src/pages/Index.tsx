@@ -138,28 +138,43 @@ export default function Index() {
     setPendingWorkflow(null);
   }
 
-  function triggerObligationsSummary() {
+  async function triggerObligationsSummary() {
     const systemMsg: ChatMessage = {
       id: crypto.randomUUID(),
       role: "assistant",
-      content: "⏳ Analyzing obligations...",
+      content: "⏳ Analyzing obligations via AI model...",
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, systemMsg]);
     setActiveWorkflow(null);
 
-    setTimeout(() => {
+    try {
+      const workflow = WORKFLOW_PROMPTS["summarize-obligations"];
+      const docText = `Document: ${latestDocName || "Uploaded legal document"}`;
+      const result = await runWorkflow(workflow.systemPrompt, workflow.userTemplate(docText));
+
       const resultMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: OBLIGATIONS_CONTENT,
+        content: result,
         timestamp: new Date(),
       };
       setMessages((prev) => {
         const filtered = prev.filter((m) => m.id !== systemMsg.id);
         return [...filtered, resultMsg];
       });
-    }, 2000);
+    } catch (err) {
+      console.error("Obligations summary failed:", err);
+      setMessages((prev) => {
+        const filtered = prev.filter((m) => m.id !== systemMsg.id);
+        return [...filtered, {
+          id: crypto.randomUUID(),
+          role: "assistant" as const,
+          content: "Failed to generate obligations summary. Please try again.",
+          timestamp: new Date(),
+        }];
+      });
+    }
   }
 
   function handleBackToHome() {
