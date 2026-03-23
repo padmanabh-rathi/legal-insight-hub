@@ -40,28 +40,6 @@ const workflows = [
 
 type ActiveWorkflow = "draft-client-alert" | "extract-chronology" | "clause-risk-analysis" | "summarize-obligations" | null;
 
-const OBLIGATIONS_CONTENT = `## Obligations Checklist — Supply Agreement
-
-Based on the analysis of the Supply Agreement between GlobalTech Industries and Meridian Corp, here are the key obligations:
-
-### Buyer (Meridian Corp) Obligations
-
-- [ ] **Quarterly Minimum Purchase** — Purchase no less than 10,000 units per calendar quarter *(Recurring — Section 3.2)*
-- [ ] **Invoice Payment** — Pay all invoices within Net 45 days from date of invoice *(Recurring — Section 4.1)*
-- [ ] **Confidentiality Compliance** — Protect all Confidential Information for 5 years post-termination *(Ongoing — Section 8.4)*
-- [ ] **IP Payment** — Make full payment for custom modifications to obtain IP ownership *(Conditional — Section 7.1)*
-
-### Supplier (GlobalTech Industries) Obligations
-
-- [ ] **Quality Standards** — Deliver components meeting specifications outlined in Exhibit A *(Recurring — Section 5.1)*
-- [ ] **Annual Performance Audit** — Participate in annual quality and compliance review *(Recurring — Section 6.2)*
-- [ ] **IP Assignment** — Transfer ownership of derivative works upon full payment *(Conditional — Section 7.1)*
-- [ ] **Notification of Force Majeure** — Provide written notice within 48 hours of a force majeure event *(Conditional — Section 12.2)*
-
-### Mutual Obligations
-
-- [ ] **Indemnification** — Both parties to indemnify against third-party IP infringement claims *(Ongoing — Section 9.1)*
-- [ ] **Termination Notice** — Provide 90 days' written notice for termination for convenience *(One-time — Section 11.3)*`;
 
 const PROMPT_ENRICHMENTS = [
   { label: "Summarize in plain English", prompt: "Please summarize the following in plain, non-technical English suitable for a business executive: " },
