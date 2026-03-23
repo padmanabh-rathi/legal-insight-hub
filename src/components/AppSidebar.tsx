@@ -51,7 +51,13 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const navigate = useNavigate();
   const isVaultActive = location.pathname.startsWith("/vault");
+
+  function handleNewChat() {
+    // Navigate to home with a flag to start fresh
+    navigate("/", { state: { newChat: true } });
+  }
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
