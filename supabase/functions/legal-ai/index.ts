@@ -6,9 +6,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// New HF router uses OpenAI-compatible chat completions endpoint
-const HF_ENDPOINT =
-  "https://router.huggingface.co/hf-inference/models/meta-llama/Meta-Llama-3.1-70B-Instruct/v1/chat/completions";
+// Unified HF router endpoint - model specified in request body
+const HF_ENDPOINT = "https://router.huggingface.co/v1/chat/completions";
+const HF_MODEL = "meta-llama/Llama-3.1-70B-Instruct";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -39,6 +39,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          model: HF_MODEL,
           messages,
           max_tokens: 2048,
           temperature: 0.7,
@@ -71,6 +72,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          model: HF_MODEL,
           messages,
           max_tokens: 2048,
           temperature: 0.7,
