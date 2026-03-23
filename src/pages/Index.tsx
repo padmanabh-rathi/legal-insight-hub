@@ -23,6 +23,8 @@ import ReactMarkdown from "react-markdown";
 import { DraftDrawer } from "@/components/workflows/DraftDrawer";
 import { TimelineView } from "@/components/workflows/TimelineView";
 import { RiskAnalysisPanel } from "@/components/workflows/RiskAnalysisPanel";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useNavigate } from "react-router-dom";
 
 const sourceTags = [
   { label: "Web Search", icon: Globe, color: "hsl(142, 60%, 40%)" },
