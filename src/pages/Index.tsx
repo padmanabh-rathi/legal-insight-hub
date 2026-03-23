@@ -68,6 +68,11 @@ const PROMPT_ENRICHMENTS = [
   { label: "Compare with standard terms", prompt: "Compare the following clauses against market-standard terms and highlight deviations: " },
 ];
 
+interface AttachedFile {
+  name: string;
+  id: string;
+}
+
 export default function Index() {
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -76,6 +81,8 @@ export default function Index() {
   const [activeWorkflow, setActiveWorkflow] = useState<ActiveWorkflow>(null);
   const [draftDrawerOpen, setDraftDrawerOpen] = useState(false);
   const [latestDocName, setLatestDocName] = useState<string | undefined>();
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const [uploading, setUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -150,6 +157,13 @@ export default function Index() {
 
   const handleAsk = async () => {
     if (!query.trim() || isLoading) return;
+
+    // Build context-aware prompt with attached files
+    const fileContext = attachedFiles.length > 0
+      ? `[Context: Analyzing document(s): ${attachedFiles.map(f => f.name).join(", ")}]\n\n`
+      : "";
+    const fullPrompt = fileContext + query;
+
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
       role: "user",
@@ -162,7 +176,7 @@ export default function Index() {
     setStreamingContent("");
 
     try {
-      const response = await askQuestion(query, (chunk) => {
+      const response = await askQuestion(fullPrompt, (chunk) => {
         setStreamingContent((prev) => prev + chunk);
       });
       setMessages((prev) => [...prev, response]);
@@ -192,6 +206,8 @@ export default function Index() {
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files?.length) return;
+    setUploading(true);
+    const uploadedFiles: AttachedFile[] = [];
     try {
       for (const file of Array.from(files)) {
         const filePath = `uploads/${Date.now()}_${file.name}`;
@@ -201,19 +217,36 @@ export default function Index() {
         if (uploadError) throw uploadError;
 
         const fileType = file.name.split(".").pop()?.toLowerCase() || "unknown";
-        const { error: dbError } = await supabase.from("documents").insert({
+        const { data: docData, error: dbError } = await supabase.from("documents").insert({
           name: file.name,
           file_path: filePath,
           status: "pending",
           file_type: fileType,
-        });
+        }).select("id, name").single();
         if (dbError) throw dbError;
+        uploadedFiles.push({ name: docData.name, id: docData.id });
       }
-      toast({ title: "Document uploaded", description: `${files.length} file(s) uploaded to Vault.` });
+
+      // Add attached files to state
+      setAttachedFiles((prev) => [...prev, ...uploadedFiles]);
+      setLatestDocName(uploadedFiles[0]?.name);
+
+      // Show upload confirmation as a system message in chat
+      const fileNames = uploadedFiles.map((f) => f.name).join(", ");
+      const uploadMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: `📎 **Document uploaded:** ${fileNames}\n\nThe document has been saved to your Vault and is ready for analysis. You can now ask questions about it — for example:\n\n- *"Summarize this document"*\n- *"What are the key risks?"*\n- *"Extract all obligations"*`,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, uploadMsg]);
+
+      toast({ title: "Document uploaded", description: `${files.length} file(s) ready for analysis.` });
     } catch (err) {
       console.error("Upload failed:", err);
       toast({ title: "Upload failed", description: "Could not upload document.", variant: "destructive" });
     } finally {
+      setUploading(false);
       e.target.value = "";
     }
   }
@@ -282,24 +315,45 @@ export default function Index() {
 
           {/* Chat input bar */}
           <div className="border-t border-border p-4 md:px-8 lg:px-16">
-            <div className="max-w-3xl mx-auto relative">
-              <Textarea
-                ref={textareaRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask anything about your legal documents..."
-                className="min-h-[48px] max-h-32 resize-none pr-12 rounded-xl border-input"
-                rows={1}
-              />
-              <Button
-                size="icon"
-                onClick={handleAsk}
-                disabled={!query.trim() || isLoading}
-                className="absolute right-2 bottom-2 h-8 w-8 rounded-lg"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+            <div className="max-w-3xl mx-auto space-y-2">
+              {attachedFiles.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {attachedFiles.map((f) => (
+                    <span key={f.id} className="inline-flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-md">
+                      <Paperclip className="h-3 w-3" />
+                      {f.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="relative flex items-end gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+                </Button>
+                <Textarea
+                  ref={textareaRef}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask anything about your legal documents..."
+                  className="min-h-[48px] max-h-32 resize-none pr-12 rounded-xl border-input"
+                  rows={1}
+                />
+                <Button
+                  size="icon"
+                  onClick={handleAsk}
+                  disabled={!query.trim() || isLoading}
+                  className="absolute right-2 bottom-2 h-8 w-8 rounded-lg"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -331,9 +385,10 @@ export default function Index() {
                     size="sm"
                     className="text-muted-foreground gap-1.5 text-xs"
                     onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
                   >
-                    <Paperclip className="h-3.5 w-3.5" />
-                    Files and sources
+                    {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
+                    {uploading ? "Uploading..." : "Files and sources"}
                   </Button>
                   <input
                     ref={fileInputRef}
