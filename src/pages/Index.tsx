@@ -157,6 +157,13 @@ export default function Index() {
 
   const handleAsk = async () => {
     if (!query.trim() || isLoading) return;
+
+    // Build context-aware prompt with attached files
+    const fileContext = attachedFiles.length > 0
+      ? `[Context: Analyzing document(s): ${attachedFiles.map(f => f.name).join(", ")}]\n\n`
+      : "";
+    const fullPrompt = fileContext + query;
+
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
       role: "user",
@@ -169,7 +176,7 @@ export default function Index() {
     setStreamingContent("");
 
     try {
-      const response = await askQuestion(query, (chunk) => {
+      const response = await askQuestion(fullPrompt, (chunk) => {
         setStreamingContent((prev) => prev + chunk);
       });
       setMessages((prev) => [...prev, response]);
