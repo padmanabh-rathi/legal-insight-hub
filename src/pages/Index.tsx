@@ -5,8 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   Paperclip,
   Sparkles,
-  Settings2,
-  ToggleLeft,
   Send,
   Globe,
   FolderOpen,
