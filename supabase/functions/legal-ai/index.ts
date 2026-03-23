@@ -6,8 +6,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// New HF router uses OpenAI-compatible chat completions endpoint
 const HF_ENDPOINT =
-  "https://router.huggingface.co/hf-inference/models/meta-llama/Meta-Llama-3.1-70B-Instruct";
+  "https://router.huggingface.co/hf-inference/models/meta-llama/Meta-Llama-3.1-70B-Instruct/v1/chat/completions";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -25,17 +26,12 @@ serve(async (req) => {
 
     const { systemPrompt, userPrompt, stream } = await req.json();
 
-    // Build the prompt in Llama chat format
-    const fullPrompt = `<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-
-${systemPrompt || "You are a helpful legal AI assistant."}<|eot_id|><|start_header_id|>user<|end_header_id|>
-
-${userPrompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
-
-`;
+    const messages = [
+      { role: "system", content: systemPrompt || "You are a helpful legal AI assistant." },
+      { role: "user", content: userPrompt },
+    ];
 
     if (stream) {
-      // Streaming mode
       const response = await fetch(HF_ENDPOINT, {
         method: "POST",
         headers: {
@@ -43,14 +39,11 @@ ${userPrompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          inputs: fullPrompt,
-          parameters: {
-            max_new_tokens: 2048,
-            temperature: 0.7,
-            top_p: 0.9,
-            return_full_text: false,
-            stream: true,
-          },
+          messages,
+          max_tokens: 2048,
+          temperature: 0.7,
+          top_p: 0.9,
+          stream: true,
         }),
       });
 
@@ -63,7 +56,6 @@ ${userPrompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
         );
       }
 
-      // Pass through the SSE stream from HF
       return new Response(response.body, {
         headers: {
           ...corsHeaders,
@@ -72,7 +64,6 @@ ${userPrompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
         },
       });
     } else {
-      // Non-streaming mode
       const response = await fetch(HF_ENDPOINT, {
         method: "POST",
         headers: {
@@ -80,13 +71,11 @@ ${userPrompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          inputs: fullPrompt,
-          parameters: {
-            max_new_tokens: 2048,
-            temperature: 0.7,
-            top_p: 0.9,
-            return_full_text: false,
-          },
+          messages,
+          max_tokens: 2048,
+          temperature: 0.7,
+          top_p: 0.9,
+          stream: false,
         }),
       });
 
@@ -100,10 +89,7 @@ ${userPrompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
       }
 
       const data = await response.json();
-      // HF returns an array with generated_text
-      const generatedText = Array.isArray(data)
-        ? data[0]?.generated_text || ""
-        : data.generated_text || "";
+      const generatedText = data.choices?.[0]?.message?.content || "";
 
       return new Response(
         JSON.stringify({ content: generatedText }),
