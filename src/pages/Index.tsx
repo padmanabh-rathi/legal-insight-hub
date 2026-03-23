@@ -1,17 +1,12 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Paperclip,
   Sparkles,
-  Settings2,
-  ToggleLeft,
   Send,
   Globe,
-  Database,
-  FileSearch,
-  Building2,
   FolderOpen,
   FileEdit,
   Clock,
@@ -26,12 +21,11 @@ import ReactMarkdown from "react-markdown";
 import { DraftDrawer } from "@/components/workflows/DraftDrawer";
 import { TimelineView } from "@/components/workflows/TimelineView";
 import { RiskAnalysisPanel } from "@/components/workflows/RiskAnalysisPanel";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useNavigate } from "react-router-dom";
 
 const sourceTags = [
-  { label: "iManage", icon: Database, color: "hsl(220, 70%, 50%)" },
-  { label: "LexisNexis", icon: FileSearch, color: "hsl(0, 70%, 50%)" },
   { label: "Web Search", icon: Globe, color: "hsl(142, 60%, 40%)" },
-  { label: "EDGAR", icon: Building2, color: "hsl(260, 60%, 50%)" },
   { label: "Project Vault", icon: FolderOpen, color: "hsl(0, 0%, 40%)" },
 ];
 
@@ -67,6 +61,13 @@ Based on the analysis of the Supply Agreement between GlobalTech Industries and 
 - [ ] **Indemnification** — Both parties to indemnify against third-party IP infringement claims *(Ongoing — Section 9.1)*
 - [ ] **Termination Notice** — Provide 90 days' written notice for termination for convenience *(One-time — Section 11.3)*`;
 
+const PROMPT_ENRICHMENTS = [
+  { label: "Summarize in plain English", prompt: "Please summarize the following in plain, non-technical English suitable for a business executive: " },
+  { label: "Identify risks & red flags", prompt: "Identify all potential risks, red flags, and unfavorable terms in the following document: " },
+  { label: "Extract key dates & deadlines", prompt: "Extract all key dates, deadlines, and time-sensitive obligations from: " },
+  { label: "Compare with standard terms", prompt: "Compare the following clauses against market-standard terms and highlight deviations: " },
+];
+
 export default function Index() {
   const [query, setQuery] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -76,6 +77,8 @@ export default function Index() {
   const [draftDrawerOpen, setDraftDrawerOpen] = useState(false);
   const [latestDocName, setLatestDocName] = useState<string | undefined>();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   const hasMessages = messages.length > 0;
 
@@ -186,6 +189,34 @@ export default function Index() {
     }
   };
 
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files?.length) return;
+    try {
+      for (const file of Array.from(files)) {
+        const filePath = `uploads/${Date.now()}_${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from("legal-documents")
+          .upload(filePath, file);
+        if (uploadError) throw uploadError;
+
+        const fileType = file.name.split(".").pop()?.toLowerCase() || "unknown";
+        const { error: dbError } = await supabase.from("documents").insert({
+          name: file.name,
+          file_path: filePath,
+          status: "pending",
+          file_type: fileType,
+        });
+        if (dbError) throw dbError;
+      }
+      toast({ title: "Document uploaded", description: `${files.length} file(s) uploaded to Vault.` });
+    } catch (err) {
+      console.error("Upload failed:", err);
+      toast({ title: "Upload failed", description: "Could not upload document.", variant: "destructive" });
+    } finally {
+      e.target.value = "";
+    }
+  }
   // Workflow full-screen views
   if (activeWorkflow === "extract-chronology") {
     return <TimelineView onBack={handleBackToHome} documentName={latestDocName} />;
@@ -295,22 +326,43 @@ export default function Index() {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1 flex-wrap">
-                  <Button variant="ghost" size="sm" className="text-muted-foreground gap-1.5 text-xs">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground gap-1.5 text-xs"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
                     <Paperclip className="h-3.5 w-3.5" />
                     Files and sources
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-muted-foreground gap-1.5 text-xs">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Prompts
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-muted-foreground gap-1.5 text-xs">
-                    <Settings2 className="h-3.5 w-3.5" />
-                    Customize
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-muted-foreground gap-1.5 text-xs">
-                    <ToggleLeft className="h-3.5 w-3.5" />
-                    Improve
-                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.docx,.doc"
+                    multiple
+                    onChange={handleFileUpload}
+                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-muted-foreground gap-1.5 text-xs">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Prompts
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72 p-2" align="start">
+                      <p className="text-xs font-medium text-muted-foreground px-2 py-1.5">Prompt Enrichment</p>
+                      {PROMPT_ENRICHMENTS.map((pe) => (
+                        <button
+                          key={pe.label}
+                          className="w-full text-left text-sm px-2 py-2 rounded-md hover:bg-accent transition-colors"
+                          onClick={() => setQuery((prev) => pe.prompt + prev)}
+                        >
+                          {pe.label}
+                        </button>
+                      ))}
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <Button onClick={handleAsk} disabled={!query.trim() || isLoading} className="rounded-lg gap-2">
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
