@@ -133,29 +133,16 @@ export default function Index() {
     setStreamingContent("");
   }
 
-  async function checkForDocuments(): Promise<boolean> {
-    const { data, error } = await supabase
-      .from("documents")
-      .select("id, name")
-      .limit(1);
-
-    if (error || !data || data.length === 0) {
-      toast({
-        title: "No documents found",
-        description: "Please upload a document in the Vault first.",
-        variant: "destructive",
-      });
-      return false;
-    }
-    setLatestDocName(data[0].name);
-    return true;
+  function handleWorkflowClick(key: ActiveWorkflow) {
+    setPendingWorkflow(key);
+    setPickerOpen(true);
   }
 
-  async function handleWorkflowClick(key: ActiveWorkflow) {
-    const hasDoc = await checkForDocuments();
-    if (!hasDoc) return;
+  function handleDocumentSelected(doc: { id: string; name: string }) {
+    setPickerOpen(false);
+    setLatestDocName(doc.name);
 
-    switch (key) {
+    switch (pendingWorkflow) {
       case "draft-client-alert":
         setDraftDrawerOpen(true);
         break;
@@ -169,6 +156,7 @@ export default function Index() {
         triggerObligationsSummary();
         break;
     }
+    setPendingWorkflow(null);
   }
 
   function triggerObligationsSummary() {
