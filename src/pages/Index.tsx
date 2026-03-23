@@ -308,7 +308,7 @@ export default function Index() {
         documentName={latestDocName}
       />
 
-      {hasMessages ? (
+      {messages.length > 0 ? (
         /* Chat mode */
         <div className="flex-1 flex flex-col">
           <div className="flex-1 overflow-auto px-4 md:px-8 lg:px-16 py-6 space-y-6">
