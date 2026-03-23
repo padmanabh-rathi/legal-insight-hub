@@ -21,6 +21,7 @@ import ReactMarkdown from "react-markdown";
 import { DraftDrawer } from "@/components/workflows/DraftDrawer";
 import { TimelineView } from "@/components/workflows/TimelineView";
 import { RiskAnalysisPanel } from "@/components/workflows/RiskAnalysisPanel";
+import { DocumentPickerDialog } from "@/components/workflows/DocumentPickerDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -81,6 +82,8 @@ export default function Index() {
   const [activeWorkflow, setActiveWorkflow] = useState<ActiveWorkflow>(null);
   const [draftDrawerOpen, setDraftDrawerOpen] = useState(false);
   const [latestDocName, setLatestDocName] = useState<string | undefined>();
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pendingWorkflow, setPendingWorkflow] = useState<ActiveWorkflow>(null);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -130,29 +133,16 @@ export default function Index() {
     setStreamingContent("");
   }
 
-  async function checkForDocuments(): Promise<boolean> {
-    const { data, error } = await supabase
-      .from("documents")
-      .select("id, name")
-      .limit(1);
-
-    if (error || !data || data.length === 0) {
-      toast({
-        title: "No documents found",
-        description: "Please upload a document in the Vault first.",
-        variant: "destructive",
-      });
-      return false;
-    }
-    setLatestDocName(data[0].name);
-    return true;
+  function handleWorkflowClick(key: ActiveWorkflow) {
+    setPendingWorkflow(key);
+    setPickerOpen(true);
   }
 
-  async function handleWorkflowClick(key: ActiveWorkflow) {
-    const hasDoc = await checkForDocuments();
-    if (!hasDoc) return;
+  function handleDocumentSelected(doc: { id: string; name: string }) {
+    setPickerOpen(false);
+    setLatestDocName(doc.name);
 
-    switch (key) {
+    switch (pendingWorkflow) {
       case "draft-client-alert":
         setDraftDrawerOpen(true);
         break;
@@ -166,6 +156,7 @@ export default function Index() {
         triggerObligationsSummary();
         break;
     }
+    setPendingWorkflow(null);
   }
 
   function triggerObligationsSummary() {
@@ -302,6 +293,12 @@ export default function Index() {
 
   return (
     <div className="flex flex-col h-full">
+      <DocumentPickerDialog
+        open={pickerOpen}
+        onClose={() => { setPickerOpen(false); setPendingWorkflow(null); }}
+        onSelect={handleDocumentSelected}
+        workflowTitle={workflows.find(w => w.key === pendingWorkflow)?.title || ""}
+      />
       <DraftDrawer
         open={draftDrawerOpen}
         onClose={() => setDraftDrawerOpen(false)}
