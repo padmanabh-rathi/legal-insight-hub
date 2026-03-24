@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 interface Document {
   id: string;
   name: string;
+  file_path: string;
   status: string;
   file_type: string;
   uploaded_at: string;
