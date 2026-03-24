@@ -9,9 +9,10 @@ interface DraftDrawerProps {
   open: boolean;
   onClose: () => void;
   documentName?: string;
+  filePath?: string;
 }
 
-export function DraftDrawer({ open, onClose, documentName }: DraftDrawerProps) {
+export function DraftDrawer({ open, onClose, documentName, filePath }: DraftDrawerProps) {
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState("");
   const [error, setError] = useState<string | null>(null);
