@@ -185,12 +185,6 @@ export default function Index() {
   const handleAsk = async () => {
     if (!query.trim() || isLoading) return;
 
-    // Build context-aware prompt with attached files
-    const fileContext = attachedFiles.length > 0
-      ? `[Context: Analyzing document(s): ${attachedFiles.map(f => f.name).join(", ")}]\n\n`
-      : "";
-    const fullPrompt = fileContext + query;
-
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
       role: "user",
@@ -202,10 +196,13 @@ export default function Index() {
     setIsLoading(true);
     setStreamingContent("");
 
+    // Collect file paths from attached documents
+    const filePaths = attachedFiles.map((f) => f.file_path);
+
     try {
-      const response = await askQuestion(fullPrompt, (chunk) => {
+      const response = await askQuestion(query, (chunk) => {
         setStreamingContent((prev) => prev + chunk);
-      });
+      }, filePaths.length > 0 ? filePaths : undefined);
       setMessages((prev) => [...prev, response]);
     } catch {
       setMessages((prev) => [
