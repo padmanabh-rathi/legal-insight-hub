@@ -283,7 +283,7 @@ export default function Index() {
   }
 
   if (activeWorkflow === "clause-risk-analysis") {
-    return <RiskAnalysisPanel onBack={handleBackToHome} documentName={latestDocName} />;
+    return <RiskAnalysisPanel onBack={handleBackToHome} documentName={latestDocName} filePath={latestDocFilePath} />;
   }
 
   return (
