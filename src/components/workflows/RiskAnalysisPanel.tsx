@@ -21,9 +21,10 @@ const riskConfig = {
 interface RiskAnalysisPanelProps {
   onBack: () => void;
   documentName?: string;
+  filePath?: string;
 }
 
-export function RiskAnalysisPanel({ onBack, documentName }: RiskAnalysisPanelProps) {
+export function RiskAnalysisPanel({ onBack, documentName, filePath }: RiskAnalysisPanelProps) {
   const [loading, setLoading] = useState(true);
   const [risks, setRisks] = useState<RiskClause[]>([]);
   const [error, setError] = useState<string | null>(null);

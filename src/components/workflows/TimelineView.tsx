@@ -14,9 +14,10 @@ interface TimelineEvent {
 interface TimelineViewProps {
   onBack: () => void;
   documentName?: string;
+  filePath?: string;
 }
 
-export function TimelineView({ onBack, documentName }: TimelineViewProps) {
+export function TimelineView({ onBack, documentName, filePath }: TimelineViewProps) {
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [error, setError] = useState<string | null>(null);

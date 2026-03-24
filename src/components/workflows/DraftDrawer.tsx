@@ -26,7 +26,7 @@ export function DraftDrawer({ open, onClose, documentName, filePath }: DraftDraw
       const workflow = WORKFLOW_PROMPTS["draft-client-alert"];
       const docText = `Document: ${documentName || "Uploaded legal document"}`;
 
-      runWorkflow(workflow.systemPrompt, workflow.userTemplate(docText))
+      runWorkflow(workflow.systemPrompt, workflow.userTemplate(docText), filePath ? [filePath] : undefined)
         .then((result) => {
           setContent(result);
           setLoading(false);
