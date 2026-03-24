@@ -119,9 +119,10 @@ export default function Index() {
     setPickerOpen(true);
   }
 
-  function handleDocumentSelected(doc: { id: string; name: string }) {
+  function handleDocumentSelected(doc: { id: string; name: string; file_path: string }) {
     setPickerOpen(false);
     setLatestDocName(doc.name);
+    setLatestDocFilePath(doc.file_path);
 
     switch (pendingWorkflow) {
       case "draft-client-alert":
