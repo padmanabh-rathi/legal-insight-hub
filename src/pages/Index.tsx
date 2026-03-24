@@ -51,6 +51,7 @@ const PROMPT_ENRICHMENTS = [
 interface AttachedFile {
   name: string;
   id: string;
+  file_path: string;
 }
 
 export default function Index() {
