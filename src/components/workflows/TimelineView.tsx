@@ -14,9 +14,10 @@ interface TimelineEvent {
 interface TimelineViewProps {
   onBack: () => void;
   documentName?: string;
+  filePath?: string;
 }
 
-export function TimelineView({ onBack, documentName }: TimelineViewProps) {
+export function TimelineView({ onBack, documentName, filePath }: TimelineViewProps) {
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +26,7 @@ export function TimelineView({ onBack, documentName }: TimelineViewProps) {
     const workflow = WORKFLOW_PROMPTS["extract-chronology"];
     const docText = `Document: ${documentName || "Uploaded legal document"}`;
 
-    runWorkflow(workflow.systemPrompt, workflow.userTemplate(docText))
+    runWorkflow(workflow.systemPrompt, workflow.userTemplate(docText), filePath ? [filePath] : undefined)
       .then((result) => {
         try {
           // Try to parse JSON from the response

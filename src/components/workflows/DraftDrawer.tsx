@@ -9,9 +9,10 @@ interface DraftDrawerProps {
   open: boolean;
   onClose: () => void;
   documentName?: string;
+  filePath?: string;
 }
 
-export function DraftDrawer({ open, onClose, documentName }: DraftDrawerProps) {
+export function DraftDrawer({ open, onClose, documentName, filePath }: DraftDrawerProps) {
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +26,7 @@ export function DraftDrawer({ open, onClose, documentName }: DraftDrawerProps) {
       const workflow = WORKFLOW_PROMPTS["draft-client-alert"];
       const docText = `Document: ${documentName || "Uploaded legal document"}`;
 
-      runWorkflow(workflow.systemPrompt, workflow.userTemplate(docText))
+      runWorkflow(workflow.systemPrompt, workflow.userTemplate(docText), filePath ? [filePath] : undefined)
         .then((result) => {
           setContent(result);
           setLoading(false);

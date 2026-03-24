@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 interface Document {
   id: string;
   name: string;
+  file_path: string;
   status: string;
   file_type: string;
   uploaded_at: string;
@@ -28,7 +29,7 @@ export function DocumentPickerDialog({ open, onClose, onSelect, workflowTitle }:
       setLoading(true);
       supabase
         .from("documents")
-        .select("id, name, status, file_type, uploaded_at")
+        .select("id, name, file_path, status, file_type, uploaded_at")
         .order("uploaded_at", { ascending: false })
         .then(({ data }) => {
           setDocuments(data || []);

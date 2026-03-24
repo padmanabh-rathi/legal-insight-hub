@@ -51,6 +51,7 @@ const PROMPT_ENRICHMENTS = [
 interface AttachedFile {
   name: string;
   id: string;
+  file_path: string;
 }
 
 export default function Index() {
@@ -61,6 +62,7 @@ export default function Index() {
   const [activeWorkflow, setActiveWorkflow] = useState<ActiveWorkflow>(null);
   const [draftDrawerOpen, setDraftDrawerOpen] = useState(false);
   const [latestDocName, setLatestDocName] = useState<string | undefined>();
+  const [latestDocFilePath, setLatestDocFilePath] = useState<string | undefined>();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pendingWorkflow, setPendingWorkflow] = useState<ActiveWorkflow>(null);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
@@ -117,9 +119,10 @@ export default function Index() {
     setPickerOpen(true);
   }
 
-  function handleDocumentSelected(doc: { id: string; name: string }) {
+  function handleDocumentSelected(doc: { id: string; name: string; file_path: string }) {
     setPickerOpen(false);
     setLatestDocName(doc.name);
+    setLatestDocFilePath(doc.file_path);
 
     switch (pendingWorkflow) {
       case "draft-client-alert":
@@ -151,7 +154,8 @@ export default function Index() {
     try {
       const workflow = WORKFLOW_PROMPTS["summarize-obligations"];
       const docText = `Document: ${latestDocName || "Uploaded legal document"}`;
-      const result = await runWorkflow(workflow.systemPrompt, workflow.userTemplate(docText));
+      const docPaths = latestDocFilePath ? [latestDocFilePath] : undefined;
+      const result = await runWorkflow(workflow.systemPrompt, workflow.userTemplate(docText), docPaths);
 
       const resultMsg: ChatMessage = {
         id: crypto.randomUUID(),
@@ -184,12 +188,6 @@ export default function Index() {
   const handleAsk = async () => {
     if (!query.trim() || isLoading) return;
 
-    // Build context-aware prompt with attached files
-    const fileContext = attachedFiles.length > 0
-      ? `[Context: Analyzing document(s): ${attachedFiles.map(f => f.name).join(", ")}]\n\n`
-      : "";
-    const fullPrompt = fileContext + query;
-
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
       role: "user",
@@ -201,10 +199,13 @@ export default function Index() {
     setIsLoading(true);
     setStreamingContent("");
 
+    // Collect file paths from attached documents
+    const filePaths = attachedFiles.map((f) => f.file_path);
+
     try {
-      const response = await askQuestion(fullPrompt, (chunk) => {
+      const response = await askQuestion(query, (chunk) => {
         setStreamingContent((prev) => prev + chunk);
-      });
+      }, filePaths.length > 0 ? filePaths : undefined);
       setMessages((prev) => [...prev, response]);
     } catch {
       setMessages((prev) => [
@@ -250,7 +251,7 @@ export default function Index() {
           file_type: fileType,
         }).select("id, name").single();
         if (dbError) throw dbError;
-        uploadedFiles.push({ name: docData.name, id: docData.id });
+        uploadedFiles.push({ name: docData.name, id: docData.id, file_path: filePath });
       }
 
       // Add attached files to state
@@ -278,11 +279,11 @@ export default function Index() {
   }
   // Workflow full-screen views
   if (activeWorkflow === "extract-chronology") {
-    return <TimelineView onBack={handleBackToHome} documentName={latestDocName} />;
+    return <TimelineView onBack={handleBackToHome} documentName={latestDocName} filePath={latestDocFilePath} />;
   }
 
   if (activeWorkflow === "clause-risk-analysis") {
-    return <RiskAnalysisPanel onBack={handleBackToHome} documentName={latestDocName} />;
+    return <RiskAnalysisPanel onBack={handleBackToHome} documentName={latestDocName} filePath={latestDocFilePath} />;
   }
 
   return (
@@ -297,6 +298,7 @@ export default function Index() {
         open={draftDrawerOpen}
         onClose={() => setDraftDrawerOpen(false)}
         documentName={latestDocName}
+        filePath={latestDocFilePath}
       />
 
       {messages.length > 0 ? (
