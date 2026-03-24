@@ -279,7 +279,7 @@ export default function Index() {
   }
   // Workflow full-screen views
   if (activeWorkflow === "extract-chronology") {
-    return <TimelineView onBack={handleBackToHome} documentName={latestDocName} />;
+    return <TimelineView onBack={handleBackToHome} documentName={latestDocName} filePath={latestDocFilePath} />;
   }
 
   if (activeWorkflow === "clause-risk-analysis") {
