@@ -26,7 +26,7 @@ export function TimelineView({ onBack, documentName, filePath }: TimelineViewPro
     const workflow = WORKFLOW_PROMPTS["extract-chronology"];
     const docText = `Document: ${documentName || "Uploaded legal document"}`;
 
-    runWorkflow(workflow.systemPrompt, workflow.userTemplate(docText))
+    runWorkflow(workflow.systemPrompt, workflow.userTemplate(docText), filePath ? [filePath] : undefined)
       .then((result) => {
         try {
           // Try to parse JSON from the response

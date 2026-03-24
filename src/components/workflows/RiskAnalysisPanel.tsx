@@ -33,7 +33,7 @@ export function RiskAnalysisPanel({ onBack, documentName, filePath }: RiskAnalys
     const workflow = WORKFLOW_PROMPTS["clause-risk-analysis"];
     const docText = `Document: ${documentName || "Uploaded legal document"}`;
 
-    runWorkflow(workflow.systemPrompt, workflow.userTemplate(docText))
+    runWorkflow(workflow.systemPrompt, workflow.userTemplate(docText), filePath ? [filePath] : undefined)
       .then((result) => {
         try {
           const jsonMatch = result.match(/\[[\s\S]*\]/);
