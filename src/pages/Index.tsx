@@ -298,6 +298,7 @@ export default function Index() {
         open={draftDrawerOpen}
         onClose={() => setDraftDrawerOpen(false)}
         documentName={latestDocName}
+        filePath={latestDocFilePath}
       />
 
       {messages.length > 0 ? (
