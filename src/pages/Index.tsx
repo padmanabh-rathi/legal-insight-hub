@@ -154,7 +154,8 @@ export default function Index() {
     try {
       const workflow = WORKFLOW_PROMPTS["summarize-obligations"];
       const docText = `Document: ${latestDocName || "Uploaded legal document"}`;
-      const result = await runWorkflow(workflow.systemPrompt, workflow.userTemplate(docText));
+      const docPaths = latestDocFilePath ? [latestDocFilePath] : undefined;
+      const result = await runWorkflow(workflow.systemPrompt, workflow.userTemplate(docText), docPaths);
 
       const resultMsg: ChatMessage = {
         id: crypto.randomUUID(),
