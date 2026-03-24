@@ -251,7 +251,7 @@ export default function Index() {
           file_type: fileType,
         }).select("id, name").single();
         if (dbError) throw dbError;
-        uploadedFiles.push({ name: docData.name, id: docData.id });
+        uploadedFiles.push({ name: docData.name, id: docData.id, file_path: filePath });
       }
 
       // Add attached files to state
